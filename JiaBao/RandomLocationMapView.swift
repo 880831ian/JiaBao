@@ -31,75 +31,76 @@ struct RandomLocationMapView: View {
     )
 
     var body: some View {
-        ZStack {
-            // 地圖視圖
-            if let pin = locationPin {
-                Map(coordinateRegion: $region,
-                    showsUserLocation: true,
-                    annotationItems: [pin]) { pin in
-                    MapAnnotation(coordinate: pin.coordinate) {
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white, lineWidth: 2)
-                            )
-                            .shadow(radius: 3)
+        GeometryReader { geometry in
+            ZStack {
+                // 地圖視圖
+                if let pin = locationPin {
+                    Map(coordinateRegion: $region,
+                        showsUserLocation: true,
+                        annotationItems: [pin]) { pin in
+                        MapAnnotation(coordinate: pin.coordinate) {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 20, height: 20)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white, lineWidth: 2)
+                                )
+                                .shadow(radius: 3)
+                        }
                     }
-                }
-                .edgesIgnoringSafeArea(.all)
-            } else {
-                Map(coordinateRegion: $region, showsUserLocation: true)
                     .edgesIgnoringSafeArea(.all)
-            }
+                } else {
+                    Map(coordinateRegion: $region, showsUserLocation: true)
+                        .edgesIgnoringSafeArea(.all)
+                }
 
-            VStack(spacing: 20) {
-                Spacer()
+                VStack {
+                    Spacer()
 
-                // 位置卡片
-                if let location = selectedLocation {
-                    LocationCard(coordinate: location, address: locationAddress)
+                    // 位置卡片
+                    if let location = selectedLocation {
+                        LocationCard(coordinate: location, address: locationAddress)
+                            .padding()
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(.ultraThinMaterial)
+                                    .shadow(radius: 10)
+                            )
+                            .padding(.horizontal)
+                            .transition(.move(edge: .bottom))
+                            .animation(.spring(), value: showingLocationCard)
+                    }
+
+                    // 隨機按鈕
+                    Button(action: generateRandomLocation) {
+                        HStack {
+                            if isGenerating {
+                                ProgressView()
+                                    .tint(.white)
+                                    .padding(.trailing, 5)
+                            }
+                            Text(isGenerating ? "搜尋中..." : "隨機選擇台中地點")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
                         .padding()
                         .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(.ultraThinMaterial)
-                                .shadow(radius: 10)
+                            Capsule()
+                                .fill(isGenerating || isMapMoving ? Color.gray : Color.blue)
+                                .shadow(radius: 5)
                         )
-                        .padding(.horizontal)
-                        .padding(.bottom, 20)
-                        .transition(.move(edge: .bottom))
-                        .animation(.spring(), value: showingLocationCard)
-                }
-
-                // 隨機按鈕
-                Button(action: generateRandomLocation) {
-                    HStack {
-                        if isGenerating {
-                            ProgressView()
-                                .tint(.white)
-                                .padding(.trailing, 5)
-                        }
-                        Text(isGenerating ? "搜尋中..." : "隨機選擇台中地點")
-                            .font(.headline)
-                            .foregroundColor(.white)
                     }
-                    .padding()
-                    .background(
-                        Capsule()
-                            .fill(isGenerating || isMapMoving ? Color.gray : Color.blue)
-                            .shadow(radius: 5)
-                    )
+                    .disabled(isGenerating || isMapMoving)
+                    .padding(.bottom, geometry.safeAreaInsets.bottom + 135) // 確保在 TabBar 上方
                 }
-                .disabled(isGenerating || isMapMoving)
-                .padding(.bottom, 30)
             }
-        }
-        .onChange(of: region.center.latitude) { _ in
-            handleMapMovement()
-        }
-        .onChange(of: region.center.longitude) { _ in
-            handleMapMovement()
+            .onChange(of: region.center.latitude) { _ in
+                handleMapMovement()
+            }
+            .onChange(of: region.center.longitude) { _ in
+                handleMapMovement()
+            }
         }
     }
 
